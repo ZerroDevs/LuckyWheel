@@ -47,10 +47,20 @@
     <main class="app-main">
         <!-- Wheel Mode -->
         <section id="wheelSection" class="mode-section active">
+            <div class="wheel-controls-top">
+                <div class="wheel-count-selector">
+                    <label for="wheelCount">Number of Wheels:</label>
+                    <select id="wheelCount">
+                        <option value="1">1 Wheel</option>
+                        <option value="2">2 Wheels</option>
+                        <option value="3">3 Wheels</option>
+                        <option value="4">4 Wheels</option>
+                    </select>
+                </div>
+            </div>
             <div class="wheel-container">
-                <div class="wheel-wrapper">
-                    <div class="wheel-pointer"></div>
-                    <canvas id="wheelCanvas" class="wheel-canvas"></canvas>
+                <div class="wheels-wrapper" id="wheelsWrapper">
+                    <!-- wheels will be generated here -->
                 </div>
                 <div class="wheel-controls">
                     <div class="speed-control">

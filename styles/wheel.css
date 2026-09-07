@@ -8,13 +8,34 @@
     min-height: 500px;
 }
 
+.wheels-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.wheels-wrapper.count-1 .wheel-wrapper {
+    width: 500px;
+    height: 500px;
+}
+.wheels-wrapper.count-2 .wheel-wrapper,
+.wheels-wrapper.count-3 .wheel-wrapper,
+.wheels-wrapper.count-4 .wheel-wrapper {
+    width: 350px;
+    height: 350px;
+}
+
 .wheel-wrapper {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 400px;
-    min-height: 400px;
+    width: 100%;
+    height: 100%;
 }
 
 /* Wheel Canvas */
@@ -25,8 +46,7 @@
     transition: transform var(--transition-normal);
     max-width: 100%;
     height: auto;
-    min-width: 400px;
-    min-height: 400px;
+    width: 100%;
 }
 
 .wheel-canvas:hover {

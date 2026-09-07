@@ -292,11 +292,12 @@ class EntriesManager {
                            class="entry-weight-input" 
                            value="${entry.weight}" 
                            min="0" 
-                           step="0.1"
+                           step="any"
                            data-field="weight">
                     <span class="weight-percent">(${this.getEntryPercentage(entry)}%)</span>
                 </div>
             ` : '';
+
 
             item.innerHTML = `
                 <input type="color" 

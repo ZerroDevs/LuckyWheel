@@ -4,8 +4,12 @@
  */
 
 class WheelEngine {
-    constructor(canvasId) {
-        this.canvas = document.getElementById(canvasId);
+    constructor(canvasOrId, index = 0) {
+        this.canvas = typeof canvasOrId === 'string' ? document.getElementById(canvasOrId) : canvasOrId;
+        this.wheelIndex = index;
+        if (this.canvas && this.canvas.parentElement) {
+            this.pointer = this.canvas.parentElement.querySelector('.wheel-pointer');
+        }
         this.ctx = this.canvas.getContext('2d');
         this.entries = [];
         this.isSpinning = false;
@@ -45,7 +49,7 @@ class WheelEngine {
         let size = Math.min(container.offsetWidth, container.offsetHeight);
         
         // Ensure minimum size
-        const minSize = 400;
+        const minSize = 200;
         size = Math.max(size, minSize);
         
         const dpr = window.devicePixelRatio || 1;
@@ -69,6 +73,7 @@ class WheelEngine {
 
     setEntries(entries) {
         this.entries = entries;
+        this.totalWeight = this.entries.reduce((sum, entry) => sum + (entry.weight || 1), 0);
         this.draw();
     }
 
@@ -117,18 +122,29 @@ class WheelEngine {
         // Clear canvas
         ctx.clearRect(0, 0, this.size, this.size);
         
-        // Calculate slice angle
-        const sliceAngle = (2 * Math.PI) / numEntries;
+        const totalWeight = this.totalWeight || 1;
         
-        // Get theme colors
+        // Get theme colors (cached if possible, but reading classList is generally fast enough if not done in hot loop, let's just keep it or cache it. Actually it's fine)
         const isDark = document.body.classList.contains('dark-theme');
         const textColor = isDark ? '#f5f5f5' : '#1a1a1a';
         const strokeColor = isDark ? '#2d2d2d' : '#ffffff';
         
+        // Calculate text settings once
+        const fontSize = Math.max(12, Math.min(18, Math.floor(radius / (numEntries * 0.8))));
+        ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        
+        let currentAngleOffset = 0;
+        
         // Draw each slice
         this.entries.forEach((entry, index) => {
-            const startAngle = this.currentRotation + (index * sliceAngle);
+            const entryWeight = entry.weight || 1;
+            const sliceAngle = (entryWeight / totalWeight) * 2 * Math.PI;
+            
+            const startAngle = this.currentRotation + currentAngleOffset;
             const endAngle = startAngle + sliceAngle;
+            currentAngleOffset += sliceAngle;
             
             // Draw slice
             ctx.beginPath();
@@ -147,19 +163,19 @@ class WheelEngine {
             ctx.save();
             ctx.translate(centerX, centerY);
             ctx.rotate(startAngle + sliceAngle / 2);
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
             ctx.fillStyle = textColor;
             
             // Add text shadow for better readability
-            ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
-            
-            // Calculate font size based on wheel size and number of entries
-            const fontSize = Math.max(12, Math.min(18, Math.floor(radius / (numEntries * 0.8))));
-            ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            // Canvas shadows are very expensive to compute, so disable them while spinning
+            if (!this.isSpinning) {
+                ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+            } else {
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+            }
             
             const text = entry.text;
             let displayText = text;
@@ -175,9 +191,19 @@ class WheelEngine {
             // Draw image if present
             if (entry.image) {
                 try {
-                    const img = new Image();
-                    img.src = entry.image;
-                    if (img.complete) {
+                    if (!this.imageCache) this.imageCache = {};
+                    let img = this.imageCache[entry.image];
+                    if (!img) {
+                        img = new Image();
+                        img.src = entry.image;
+                        this.imageCache[entry.image] = img;
+                        
+                        // Force a redraw once the image loads if we aren't spinning
+                        img.onload = () => {
+                            if (!this.isSpinning) this.draw();
+                        };
+                    }
+                    if (img.complete && img.naturalHeight !== 0) {
                         const imgSize = Math.max(30, Math.min(50, Math.floor(radius / 8)));
                         ctx.drawImage(img, radius - imgSize - 35, -imgSize / 2, imgSize, imgSize);
                     }
@@ -347,14 +373,25 @@ class WheelEngine {
      * Check for slice boundary crossings (for tick sounds)
      */
     checkForTicks() {
-        const numEntries = this.entries.length;
-        const sliceAngle = (2 * Math.PI) / numEntries;
+        if (!this.entries || this.entries.length === 0) return;
         
-        // Normalize current rotation
-        const normalizedRotation = this.currentRotation % (2 * Math.PI);
+        const totalWeight = this.totalWeight || 1;
         
-        // Calculate current slice index
-        const currentSlice = Math.floor(normalizedRotation / sliceAngle);
+        let pointerAngle = -Math.PI / 2 - this.currentRotation;
+        pointerAngle = pointerAngle % (2 * Math.PI);
+        if (pointerAngle < 0) pointerAngle += 2 * Math.PI;
+        
+        let currentOffset = 0;
+        let currentSlice = 0;
+        for (let i = 0; i < this.entries.length; i++) {
+            const entryWeight = this.entries[i].weight || 1;
+            const sliceAngle = (entryWeight / totalWeight) * 2 * Math.PI;
+            if (pointerAngle >= currentOffset && pointerAngle < currentOffset + sliceAngle) {
+                currentSlice = i;
+                break;
+            }
+            currentOffset += sliceAngle;
+        }
         
         if (currentSlice !== this.lastTickAngle) {
             this.lastTickAngle = currentSlice;
@@ -363,10 +400,9 @@ class WheelEngine {
             soundEffects.playTick();
             
             // Animate pointer
-            const pointer = document.querySelector('.wheel-pointer');
-            if (pointer) {
-                pointer.classList.add('ticking');
-                setTimeout(() => pointer.classList.remove('ticking'), 100);
+            if (this.pointer) {
+                this.pointer.classList.add('ticking');
+                setTimeout(() => this.pointer.classList.remove('ticking'), 100);
             }
         }
     }
@@ -378,42 +414,54 @@ class WheelEngine {
         this.isSpinning = false;
         
         // Calculate winning slice
-        const numEntries = this.entries.length;
-        const sliceAngle = (2 * Math.PI) / numEntries;
+        const totalWeight = this.totalWeight || 1;
         
-        // Pointer is at -PI/2 (top), so we need to calculate which slice is at that angle
-        const normalizedRotation = (this.currentRotation + Math.PI / 2) % (2 * Math.PI);
-        const winningIndex = Math.floor((2 * Math.PI - normalizedRotation) / sliceAngle) % numEntries;
+        let pointerAngle = -Math.PI / 2 - this.currentRotation;
+        pointerAngle = pointerAngle % (2 * Math.PI);
+        if (pointerAngle < 0) pointerAngle += 2 * Math.PI;
         
-        const winner = this.entries[winningIndex];
-        
-        // Update button state
-        const spinBtn = document.getElementById('spinBtn');
-        if (spinBtn) {
-            spinBtn.classList.remove('spinning');
-            spinBtn.disabled = false;
-        }
-        
-        // Add to history
-        historyManager.addWinner(winner, 'wheel');
-        
-        // Trigger confetti immediately
-        if (confettiInstance) {
-            confettiInstance.celebrate();
-        } else {
-            const confetti = initConfetti();
-            if (confetti) {
-                confetti.celebrate();
+        let currentOffset = 0;
+        let winner = this.entries[0];
+        for (let i = 0; i < this.entries.length; i++) {
+            const entryWeight = this.entries[i].weight || 1;
+            const sliceAngle = (entryWeight / totalWeight) * 2 * Math.PI;
+            if (pointerAngle >= currentOffset && pointerAngle < currentOffset + sliceAngle) {
+                winner = this.entries[i];
+                break;
             }
+            currentOffset += sliceAngle;
         }
-        
-        // Play victory sound immediately
-        soundEffects.playVictory();
-        
-        // Show winner modal after a short delay for better UX
-        setTimeout(() => {
-            this.showWinner(winner);
-        }, 300);
+        if (typeof this.onFinish === 'function') {
+            this.onFinish(winner);
+        } else {
+            // Update button state
+            const spinBtn = document.getElementById('spinBtn');
+            if (spinBtn) {
+                spinBtn.classList.remove('spinning');
+                spinBtn.disabled = false;
+            }
+            
+            // Add to history
+            historyManager.addWinner(winner, 'wheel');
+            
+            // Trigger confetti immediately
+            if (confettiInstance) {
+                confettiInstance.celebrate();
+            } else {
+                const confetti = initConfetti();
+                if (confetti) {
+                    confetti.celebrate();
+                }
+            }
+            
+            // Play victory sound immediately
+            soundEffects.playVictory();
+            
+            // Show winner modal after a short delay for better UX
+            setTimeout(() => {
+                this.showWinner(winner);
+            }, 300);
+        }
     }
 
     /**
@@ -528,43 +576,219 @@ class WheelEngine {
 }
 
 // Initialize wheel engine
-let wheelEngine = null;
-
-function initWheel() {
-    const canvas = document.getElementById('wheelCanvas');
-    if (canvas && !wheelEngine) {
-        wheelEngine = new WheelEngine('wheelCanvas');
+class WheelController {
+    constructor() {
+        this.engines = [];
+        this.wheelCount = 1;
+        this.wrapper = document.getElementById('wheelsWrapper');
+        this.isSpinning = false;
         
-        // Load entries from entries manager
-        if (entriesManager) {
-            wheelEngine.setEntries(entriesManager.getWeightedEntries());
-        }
-        
-        // Setup spin button
-        const spinBtn = document.getElementById('spinBtn');
-        if (spinBtn) {
-            spinBtn.addEventListener('click', () => {
-                wheelEngine.spin();
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.renderWheels();
+    }
+    
+    setupEventListeners() {
+        const countSelector = document.getElementById('wheelCount');
+        if (countSelector) {
+            countSelector.addEventListener('change', (e) => {
+                this.setWheelCount(parseInt(e.target.value));
             });
         }
         
-        // Setup speed control
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.addEventListener('click', () => {
+                this.spin();
+            });
+        }
+        
         const speedInput = document.getElementById('wheelSpeed');
         const speedValue = document.getElementById('wheelSpeedValue');
         if (speedInput && speedValue) {
             speedInput.addEventListener('input', (e) => {
-                wheelEngine.speed = parseInt(e.target.value);
-                speedValue.textContent = e.target.value;
+                const speed = parseInt(e.target.value);
+                speedValue.textContent = speed;
+                this.engines.forEach(engine => engine.speed = speed);
             });
         }
         
-        // Keyboard shortcut
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !wheelEngine.isSpinning) {
-                e.preventDefault();
-                wheelEngine.spin();
+        // Note: Keyboard shortcut is handled globally in app.js
+    }
+    
+    setWheelCount(count) {
+        if (this.isSpinning) return;
+        this.wheelCount = Math.max(1, Math.min(4, count));
+        this.renderWheels();
+    }
+    
+    renderWheels() {
+        if (!this.wrapper) return;
+        
+        this.wrapper.innerHTML = '';
+        this.wrapper.className = `wheels-wrapper count-${this.wheelCount}`;
+        this.engines = [];
+        
+        for (let i = 0; i < this.wheelCount; i++) {
+            const wheelContainer = document.createElement('div');
+            wheelContainer.className = 'wheel-wrapper';
+            
+            const pointer = document.createElement('div');
+            pointer.className = 'wheel-pointer';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'wheel-canvas';
+            
+            wheelContainer.appendChild(pointer);
+            wheelContainer.appendChild(canvas);
+            this.wrapper.appendChild(wheelContainer);
+            
+            const engine = new WheelEngine(canvas, i);
+            if (entriesManager) {
+                engine.setEntries(entriesManager.getWeightedEntries());
             }
+            this.engines.push(engine);
+        }
+    }
+    
+    setEntries(entries) {
+        this.engines.forEach(engine => engine.setEntries(entries));
+    }
+    
+    setSpinDuration(duration) {
+        this.engines.forEach(engine => engine.setSpinDuration(duration));
+    }
+    
+    spin() {
+        if (this.isSpinning || this.engines.length === 0 || this.engines[0].entries.length === 0) return;
+        
+        this.isSpinning = true;
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.classList.add('spinning');
+            spinBtn.disabled = true;
+        }
+        
+        let finishedCount = 0;
+        const results = [];
+        
+        this.engines.forEach((engine, index) => {
+            engine.onFinish = (winner) => {
+                finishedCount++;
+                results[index] = winner;
+                
+                if (finishedCount === this.engines.length) {
+                    this.onAllFinished(results);
+                }
+            };
+            
+            // Stagger start times slightly
+            setTimeout(() => {
+                engine.spin();
+            }, index * 100);
         });
+    }
+    
+    onAllFinished(winners) {
+        this.isSpinning = false;
+        
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.classList.remove('spinning');
+            spinBtn.disabled = false;
+        }
+        
+        // Add to history
+        winners.forEach(winner => {
+            historyManager.addWinner(winner, 'wheel');
+        });
+        
+        if (confettiInstance) confettiInstance.celebrate();
+        else {
+            const confetti = initConfetti();
+            if (confetti) confetti.celebrate();
+        }
+        soundEffects.playVictory();
+        
+        setTimeout(() => {
+            this.showWinners(winners);
+        }, 300);
+    }
+    
+    showWinners(winners) {
+        const modal = document.getElementById('winnerModal');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+        if (!winnerDisplay || !modal) return;
+        
+        let content = '<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">';
+        
+        winners.forEach((winner, i) => {
+            content += `<div style="text-align: center; max-width: 150px;">`;
+            if (this.engines.length > 1) {
+                content += `<div style="font-size: 14px; opacity: 0.8; margin-bottom: 5px;">Wheel ${i + 1}</div>`;
+            }
+            if (winner.image) {
+                content += `<img src="${winner.image}" class="winner-image" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover;" alt="${winner.text}">`;
+            }
+            content += `<div class="winner-name" style="font-size: 18px; margin-top: 10px;">${winner.text}</div>`;
+            content += `</div>`;
+        });
+        
+        content += '</div>';
+        winnerDisplay.innerHTML = content;
+        
+        modal.classList.add('active');
+        
+        const closeBtn = document.getElementById('closeWinnerBtn');
+        const removeAndSpinBtn = document.getElementById('removeAndSpinBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        
+        if (closeBtn) closeBtn.onclick = () => this.closeWinnerModal();
+        
+        if (removeAndSpinBtn) {
+            removeAndSpinBtn.onclick = () => {
+                winners.forEach(w => entriesManager.deleteEntry(w.id));
+                this.closeWinnerModal();
+                setTimeout(() => this.spin(), 300);
+            };
+        }
+        
+        if (playAgainBtn) {
+            playAgainBtn.onclick = () => {
+                this.closeWinnerModal();
+                setTimeout(() => this.spin(), 300);
+            };
+        }
+    }
+    
+    closeWinnerModal() {
+        const modal = document.getElementById('winnerModal');
+        if (modal) modal.classList.remove('active');
+        if (confettiInstance) confettiInstance.clear();
+    }
+    
+    draw() {
+        this.engines.forEach(engine => engine.draw());
+    }
+    
+    get isSpinning() {
+        return this._isSpinning;
+    }
+    
+    set isSpinning(value) {
+        this._isSpinning = value;
+    }
+}
+
+// Initialize wheel engine
+let wheelEngine = null; // now refers to WheelController
+
+function initWheel() {
+    if (!wheelEngine) {
+        wheelEngine = new WheelController();
     }
     return wheelEngine;
 }

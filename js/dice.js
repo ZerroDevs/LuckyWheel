@@ -130,9 +130,19 @@ class DiceEngine {
                 soundEffects.playDiceBounce();
             }, index * 100);
 
-            // Calculate result
-            const entryIndex = Math.floor(Math.random() * this.entries.length);
-            const result = this.entries[entryIndex];
+            // Calculate result based on weight
+            const totalWeight = this.entries.reduce((sum, entry) => sum + (entry.weight || 1), 0);
+            let randomValue = Math.random() * totalWeight;
+            let result = this.entries[0];
+            
+            for (const entry of this.entries) {
+                const weight = entry.weight || 1;
+                if (randomValue < weight) {
+                    result = entry;
+                    break;
+                }
+                randomValue -= weight;
+            }
             results.push(result);
 
             // Update die face after animation
