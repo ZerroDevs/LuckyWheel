@@ -47,3 +47,10 @@ This is a static web app. To run it, simply open the `index.html` file in your b
 - Press `E` to open the Entries editor.
 - Press `H` to view roll History.
 - Press `T` to toggle the Light/Dark theme.
+
+## Author 👤
+**ZerroDevs**
+- GitHub: [@ZerroDevs](https://github.com/ZerroDevs)
+
+## License 📄
+This project is licensed under a Non-Commercial License. You are free to use, modify, and distribute this software for personal or educational purposes, but **you may not use it for commercial purposes or sell it**. See the [LICENSE](LICENSE) file for full details.
