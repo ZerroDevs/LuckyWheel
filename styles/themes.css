@@ -1,0 +1,311 @@
+/* Light Theme (Default) */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --bg-elevated: #fafafa;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --border-color: #d1d5db;
+    --border-light: #e5e7eb;
+    --accent-color: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-light: rgba(99, 102, 241, 0.1);
+    --success-color: #10b981;
+    --success-light: rgba(16, 185, 129, 0.1);
+    --danger-color: #ef4444;
+    --danger-light: rgba(239, 68, 68, 0.1);
+    --warning-color: #f59e0b;
+    --warning-light: rgba(245, 158, 11, 0.1);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+    --wheel-text-color: #1a1a1a;
+    --wheel-stroke-color: #ffffff;
+    --dice-text-color: #1a1a1a;
+    --dice-dot-color: #1a1a1a;
+    --overlay-bg: rgba(0, 0, 0, 0.5);
+}
+
+/* Dark Theme */
+body.dark-theme {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #404040;
+    --bg-elevated: #252525;
+    --text-primary: #f5f5f5;
+    --text-secondary: #b3b3b3;
+    --text-muted: #808080;
+    --border-color: #4a4a4a;
+    --border-light: #3d3d3d;
+    --accent-color: #818cf8;
+    --accent-hover: #6366f1;
+    --accent-light: rgba(129, 140, 248, 0.15);
+    --success-color: #34d399;
+    --success-light: rgba(52, 211, 153, 0.15);
+    --danger-color: #f87171;
+    --danger-light: rgba(248, 113, 113, 0.15);
+    --warning-color: #fbbf24;
+    --warning-light: rgba(251, 191, 36, 0.15);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+    --wheel-text-color: #f5f5f5;
+    --wheel-stroke-color: #2d2d2d;
+    --dice-text-color: #f5f5f5;
+    --dice-dot-color: #f5f5f5;
+    --overlay-bg: rgba(0, 0, 0, 0.7);
+}
+
+/* Theme Transition Animation */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+/* Theme Toggle Button Animation */
+#themeToggle {
+    position: relative;
+    overflow: hidden;
+}
+
+#themeToggle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: var(--accent-color);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+#themeToggle:hover::before {
+    width: 200%;
+    height: 200%;
+}
+
+#themeToggle span {
+    position: relative;
+    z-index: 1;
+}
+
+/* System Preference Detection */
+@media (prefers-color-scheme: dark) {
+    :root:not(.light-theme-forced) {
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #2d2d2d;
+        --bg-tertiary: #404040;
+        --bg-elevated: #252525;
+        --text-primary: #f5f5f5;
+        --text-secondary: #b3b3b3;
+        --text-muted: #808080;
+        --border-color: #4a4a4a;
+        --border-light: #3d3d3d;
+        --accent-color: #818cf8;
+        --accent-hover: #6366f1;
+        --accent-light: rgba(129, 140, 248, 0.15);
+        --success-color: #34d399;
+        --success-light: rgba(52, 211, 153, 0.15);
+        --danger-color: #f87171;
+        --danger-light: rgba(248, 113, 113, 0.15);
+        --warning-color: #fbbf24;
+        --warning-light: rgba(251, 191, 36, 0.15);
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+        --wheel-text-color: #f5f5f5;
+        --wheel-stroke-color: #2d2d2d;
+        --dice-text-color: #f5f5f5;
+        --dice-dot-color: #f5f5f5;
+        --overlay-bg: rgba(0, 0, 0, 0.7);
+    }
+}
+
+/* Override system preference when light theme is forced */
+body.light-theme-forced {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --bg-elevated: #fafafa;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --border-color: #d1d5db;
+    --border-light: #e5e7eb;
+    --accent-color: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-light: rgba(99, 102, 241, 0.1);
+    --success-color: #10b981;
+    --success-light: rgba(16, 185, 129, 0.1);
+    --danger-color: #ef4444;
+    --danger-light: rgba(239, 68, 68, 0.1);
+    --warning-color: #f59e0b;
+    --warning-light: rgba(245, 158, 11, 0.1);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+    --wheel-text-color: #1a1a1a;
+    --wheel-stroke-color: #ffffff;
+    --dice-text-color: #1a1a1a;
+    --dice-dot-color: #1a1a1a;
+    --overlay-bg: rgba(0, 0, 0, 0.5);
+}
+
+/* Dynamic Canvas Contrast for Wheel */
+.wheel-canvas {
+    filter: contrast(1);
+}
+
+body.dark-theme .wheel-canvas {
+    filter: contrast(1.05);
+}
+
+/* Dynamic Canvas Contrast for Dice */
+.dice-face {
+    filter: contrast(1);
+}
+
+body.dark-theme .dice-face {
+    filter: contrast(1.05);
+}
+
+/* Surface Colors for Different Elements */
+.surface-primary {
+    background-color: var(--bg-primary);
+}
+
+.surface-secondary {
+    background-color: var(--bg-secondary);
+}
+
+.surface-tertiary {
+    background-color: var(--bg-tertiary);
+}
+
+.surface-elevated {
+    background-color: var(--bg-elevated);
+}
+
+/* Text Colors */
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+/* Accent Colors */
+.accent-text {
+    color: var(--accent-color);
+}
+
+.success-text {
+    color: var(--success-color);
+}
+
+.danger-text {
+    color: var(--danger-color);
+}
+
+.warning-text {
+    color: var(--warning-color);
+}
+
+/* Background Accents */
+.accent-bg {
+    background-color: var(--accent-color);
+}
+
+.success-bg {
+    background-color: var(--success-color);
+}
+
+.danger-bg {
+    background-color: var(--danger-color);
+}
+
+.warning-bg {
+    background-color: var(--warning-color);
+}
+
+/* Light Accents */
+.accent-light-bg {
+    background-color: var(--accent-light);
+}
+
+.success-light-bg {
+    background-color: var(--success-light);
+}
+
+.danger-light-bg {
+    background-color: var(--danger-light);
+}
+
+.warning-light-bg {
+    background-color: var(--warning-light);
+}
+
+/* Border Colors */
+.border-accent {
+    border-color: var(--accent-color);
+}
+
+.border-success {
+    border-color: var(--success-color);
+}
+
+.border-danger {
+    border-color: var(--danger-color);
+}
+
+/* Theme-specific scrollbar colors */
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-color);
+}
+
+/* Focus states respect theme */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* Selection colors respect theme */
+::selection {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+body.dark-theme ::selection {
+    background-color: var(--accent-color);
+    color: var(--bg-primary);
+}

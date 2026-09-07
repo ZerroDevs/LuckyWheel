@@ -1,0 +1,575 @@
+/**
+ * Wheel Engine
+ * Canvas-based wheel drawing, High-DPI scaling, physics calculation, center hub rendering, and spin engine
+ */
+
+class WheelEngine {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.entries = [];
+        this.isSpinning = false;
+        this.currentRotation = 0;
+        this.spinVelocity = 0;
+        this.spinDuration = 5000;
+        this.spinStartTime = 0;
+        this.lastTickAngle = 0;
+        this.pointerAngle = -Math.PI / 2; // Pointer at top (270 degrees)
+        this.centerHubImage = null;
+        this.settings = {
+            spinDuration: 5,
+            easing: 'ease-out'
+        };
+        this.speed = 5;
+        
+        this.init();
+    }
+
+    init() {
+        this.resizeCanvas();
+        window.addEventListener('resize', () => {
+            this.resizeCanvas();
+            this.draw();
+        });
+        
+        // Listen for theme changes
+        window.addEventListener('themeChange', (e) => {
+            this.draw();
+        });
+    }
+
+    resizeCanvas() {
+        if (!this.canvas) return;
+        
+        const container = this.canvas.parentElement;
+        let size = Math.min(container.offsetWidth, container.offsetHeight);
+        
+        // Ensure minimum size
+        const minSize = 400;
+        size = Math.max(size, minSize);
+        
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Set display size
+        this.canvas.style.width = size + 'px';
+        this.canvas.style.height = size + 'px';
+        
+        // Set actual size in memory (scaled for high DPI)
+        this.canvas.width = size * dpr;
+        this.canvas.height = size * dpr;
+        
+        // Normalize coordinate system
+        this.ctx.scale(dpr, dpr);
+        
+        this.size = size;
+        this.centerX = size / 2;
+        this.centerY = size / 2;
+        this.radius = (size / 2) - 15;
+    }
+
+    setEntries(entries) {
+        this.entries = entries;
+        this.draw();
+    }
+
+    setSpinDuration(seconds) {
+        this.settings.spinDuration = seconds;
+        this.spinDuration = seconds * 1000;
+    }
+
+    setCenterHubImage(imageUrl) {
+        if (imageUrl) {
+            const img = new Image();
+            img.onload = () => {
+                this.centerHubImage = img;
+                this.draw();
+            };
+            img.src = imageUrl;
+        } else {
+            this.centerHubImage = null;
+            this.draw();
+        }
+    }
+
+    /**
+     * Draw the wheel
+     */
+    draw() {
+        if (!this.ctx) return;
+        
+        if (this.entries.length === 0) {
+            this.drawEmptyState();
+            return;
+        }
+
+        const ctx = this.ctx;
+        const centerX = this.centerX;
+        const centerY = this.centerY;
+        const radius = this.radius;
+        const numEntries = this.entries.length;
+        
+        // Show spin button when entries exist
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.style.display = 'block';
+        }
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, this.size, this.size);
+        
+        // Calculate slice angle
+        const sliceAngle = (2 * Math.PI) / numEntries;
+        
+        // Get theme colors
+        const isDark = document.body.classList.contains('dark-theme');
+        const textColor = isDark ? '#f5f5f5' : '#1a1a1a';
+        const strokeColor = isDark ? '#2d2d2d' : '#ffffff';
+        
+        // Draw each slice
+        this.entries.forEach((entry, index) => {
+            const startAngle = this.currentRotation + (index * sliceAngle);
+            const endAngle = startAngle + sliceAngle;
+            
+            // Draw slice
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.closePath();
+            
+            ctx.fillStyle = entry.color;
+            ctx.fill();
+            
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw text
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(startAngle + sliceAngle / 2);
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = textColor;
+            
+            // Add text shadow for better readability
+            ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            
+            // Calculate font size based on wheel size and number of entries
+            const fontSize = Math.max(12, Math.min(18, Math.floor(radius / (numEntries * 0.8))));
+            ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            
+            const text = entry.text;
+            let displayText = text;
+            
+            // Truncate text based on available space
+            const maxTextLength = Math.floor(radius / fontSize);
+            if (text.length > maxTextLength) {
+                displayText = text.substring(0, maxTextLength - 3) + '...';
+            }
+            
+            ctx.fillText(displayText, radius - 25, 0);
+            
+            // Draw image if present
+            if (entry.image) {
+                try {
+                    const img = new Image();
+                    img.src = entry.image;
+                    if (img.complete) {
+                        const imgSize = Math.max(30, Math.min(50, Math.floor(radius / 8)));
+                        ctx.drawImage(img, radius - imgSize - 35, -imgSize / 2, imgSize, imgSize);
+                    }
+                } catch (e) {
+                    // Image loading error, skip
+                }
+            }
+            
+            ctx.restore();
+        });
+        
+        // Draw center hub
+        this.drawCenterHub(ctx, centerX, centerY, strokeColor);
+    }
+
+    drawCenterHub(ctx, centerX, centerY, strokeColor) {
+        const hubRadius = 40;
+        
+        // Hub background
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, hubRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = strokeColor;
+        ctx.fill();
+        
+        ctx.strokeStyle = this.getAccentColor();
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        
+        // Draw hub image or text
+        if (this.centerHubImage) {
+            try {
+                const imgSize = hubRadius * 1.5;
+                ctx.drawImage(
+                    this.centerHubImage,
+                    centerX - imgSize / 2,
+                    centerY - imgSize / 2,
+                    imgSize,
+                    imgSize
+                );
+            } catch (e) {
+                // Image error, draw default
+                this.drawDefaultHubContent(ctx, centerX, centerY);
+            }
+        } else {
+            this.drawDefaultHubContent(ctx, centerX, centerY);
+        }
+    }
+
+    drawDefaultHubContent(ctx, centerX, centerY) {
+        ctx.fillStyle = this.getAccentColor();
+        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🎰', centerX, centerY);
+    }
+
+    getAccentColor() {
+        const isDark = document.body.classList.contains('dark-theme');
+        return isDark ? '#818cf8' : '#6366f1';
+    }
+
+    drawEmptyState() {
+        const ctx = this.ctx;
+        const centerX = this.centerX;
+        const centerY = this.centerY;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, this.size, this.size);
+        
+        // Hide spin button when no entries
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.style.display = 'none';
+        }
+        
+        // Draw message only (no wheel)
+        ctx.fillStyle = this.getTextColor();
+        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const message = 'No entries yet';
+        const subMessage = 'Click "Edit" to add entries';
+        
+        ctx.fillText(message, centerX, centerY - 15);
+        ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = this.getTextColor() + '80';
+        ctx.fillText(subMessage, centerX, centerY + 15);
+    }
+
+    getEmptyWheelColor() {
+        const isDark = document.body.classList.contains('dark-theme');
+        return isDark ? '#2d2d2d' : '#f5f5f5';
+    }
+
+    getTextColor() {
+        const isDark = document.body.classList.contains('dark-theme');
+        return isDark ? '#f5f5f5' : '#1a1a1a';
+    }
+
+    /**
+     * Spin the wheel
+     */
+    spin() {
+        if (this.isSpinning || this.entries.length === 0) return;
+        
+        this.isSpinning = true;
+        this.spinStartTime = Date.now();
+        
+        // Calculate spin duration based on speed (1 = slow/long, 10 = fast/short)
+        const baseDuration = 5000;
+        const speedMultiplier = 11 - this.speed; // Invert so higher speed = shorter duration
+        this.spinDuration = baseDuration / (speedMultiplier / 5);
+        
+        // Calculate random spin based on speed
+        const minSpins = 3 + Math.floor(this.speed / 3);
+        const maxSpins = 6 + Math.floor(this.speed / 2);
+        const spins = minSpins + Math.random() * (maxSpins - minSpins);
+        const targetRotation = this.currentRotation + (spins * 2 * Math.PI);
+        
+        // Random deceleration curve
+        const easingFunctions = {
+            'ease-out': this.easeOutCubic,
+            'ease-in-out': this.easeInOutCubic,
+            'bounce': this.easeOutBounce
+        };
+        
+        const easing = easingFunctions[this.settings.easing] || this.easeOutCubic;
+        
+        // Animate spin
+        const animate = () => {
+            const elapsed = Date.now() - this.spinStartTime;
+            const progress = Math.min(elapsed / this.spinDuration, 1);
+            
+            // Calculate current rotation
+            const easedProgress = easing(progress);
+            this.currentRotation = this.currentRotation + (targetRotation - this.currentRotation) * easedProgress * 0.1;
+            
+            // Check for tick sounds
+            this.checkForTicks();
+            
+            // Draw wheel
+            this.draw();
+            
+            // Continue animation or finish
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                this.finishSpin();
+            }
+        };
+        
+        animate();
+        
+        // Play spin sound
+        soundEffects.playSpin();
+        
+        // Update button state
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.classList.add('spinning');
+            spinBtn.disabled = true;
+        }
+    }
+
+    /**
+     * Check for slice boundary crossings (for tick sounds)
+     */
+    checkForTicks() {
+        const numEntries = this.entries.length;
+        const sliceAngle = (2 * Math.PI) / numEntries;
+        
+        // Normalize current rotation
+        const normalizedRotation = this.currentRotation % (2 * Math.PI);
+        
+        // Calculate current slice index
+        const currentSlice = Math.floor(normalizedRotation / sliceAngle);
+        
+        if (currentSlice !== this.lastTickAngle) {
+            this.lastTickAngle = currentSlice;
+            
+            // Play tick sound
+            soundEffects.playTick();
+            
+            // Animate pointer
+            const pointer = document.querySelector('.wheel-pointer');
+            if (pointer) {
+                pointer.classList.add('ticking');
+                setTimeout(() => pointer.classList.remove('ticking'), 100);
+            }
+        }
+    }
+
+    /**
+     * Finish spin and determine winner
+     */
+    finishSpin() {
+        this.isSpinning = false;
+        
+        // Calculate winning slice
+        const numEntries = this.entries.length;
+        const sliceAngle = (2 * Math.PI) / numEntries;
+        
+        // Pointer is at -PI/2 (top), so we need to calculate which slice is at that angle
+        const normalizedRotation = (this.currentRotation + Math.PI / 2) % (2 * Math.PI);
+        const winningIndex = Math.floor((2 * Math.PI - normalizedRotation) / sliceAngle) % numEntries;
+        
+        const winner = this.entries[winningIndex];
+        
+        // Update button state
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.classList.remove('spinning');
+            spinBtn.disabled = false;
+        }
+        
+        // Add to history
+        historyManager.addWinner(winner, 'wheel');
+        
+        // Trigger confetti immediately
+        if (confettiInstance) {
+            confettiInstance.celebrate();
+        } else {
+            const confetti = initConfetti();
+            if (confetti) {
+                confetti.celebrate();
+            }
+        }
+        
+        // Play victory sound immediately
+        soundEffects.playVictory();
+        
+        // Show winner modal after a short delay for better UX
+        setTimeout(() => {
+            this.showWinner(winner);
+        }, 300);
+    }
+
+    /**
+     * Show winner modal
+     */
+    showWinner(winner) {
+        const modal = document.getElementById('winnerModal');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+        
+        if (!winnerDisplay) return;
+        
+        let content = '';
+        
+        if (winner.image) {
+            content += `<img src="${winner.image}" class="winner-image" alt="${winner.text}">`;
+        }
+        
+        content += `<div class="winner-name">${winner.text}</div>`;
+        
+        winnerDisplay.innerHTML = content;
+        
+        // Show modal
+        if (modal) {
+            modal.classList.add('active');
+        }
+        
+        // Setup modal buttons
+        this.setupWinnerModalButtons(winner);
+    }
+
+    setupWinnerModalButtons(winner) {
+        const closeBtn = document.getElementById('closeWinnerBtn');
+        const removeAndSpinBtn = document.getElementById('removeAndSpinBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                this.closeWinnerModal();
+            };
+        }
+        
+        if (removeAndSpinBtn) {
+            removeAndSpinBtn.onclick = () => {
+                entriesManager.deleteEntry(winner.id);
+                this.closeWinnerModal();
+                setTimeout(() => this.spin(), 300);
+            };
+        }
+        
+        if (playAgainBtn) {
+            playAgainBtn.onclick = () => {
+                this.closeWinnerModal();
+                setTimeout(() => this.spin(), 300);
+            };
+        }
+    }
+
+    closeWinnerModal() {
+        const modal = document.getElementById('winnerModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+        
+        // Stop confetti
+        if (confettiInstance) {
+            confettiInstance.clear();
+        }
+    }
+
+    /**
+     * Easing functions
+     */
+    easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+
+    easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    easeOutBounce(t) {
+        const n1 = 7.5625;
+        const d1 = 2.75;
+        
+        if (t < 1 / d1) {
+            return n1 * t * t;
+        } else if (t < 2 / d1) {
+            return n1 * (t -= 1.5 / d1) * t + 0.75;
+        } else if (t < 2.5 / d1) {
+            return n1 * (t -= 2.25 / d1) * t + 0.9375;
+        } else {
+            return n1 * (t -= 2.625 / d1) * t + 0.984375;
+        }
+    }
+
+    /**
+     * Get current settings
+     */
+    getSettings() {
+        return this.settings;
+    }
+
+    /**
+     * Update settings
+     */
+    updateSettings(newSettings) {
+        this.settings = { ...this.settings, ...newSettings };
+        if (newSettings.spinDuration) {
+            this.setSpinDuration(newSettings.spinDuration);
+        }
+    }
+}
+
+// Initialize wheel engine
+let wheelEngine = null;
+
+function initWheel() {
+    const canvas = document.getElementById('wheelCanvas');
+    if (canvas && !wheelEngine) {
+        wheelEngine = new WheelEngine('wheelCanvas');
+        
+        // Load entries from entries manager
+        if (entriesManager) {
+            wheelEngine.setEntries(entriesManager.getWeightedEntries());
+        }
+        
+        // Setup spin button
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            spinBtn.addEventListener('click', () => {
+                wheelEngine.spin();
+            });
+        }
+        
+        // Setup speed control
+        const speedInput = document.getElementById('wheelSpeed');
+        const speedValue = document.getElementById('wheelSpeedValue');
+        if (speedInput && speedValue) {
+            speedInput.addEventListener('input', (e) => {
+                wheelEngine.speed = parseInt(e.target.value);
+                speedValue.textContent = e.target.value;
+            });
+        }
+        
+        // Keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !wheelEngine.isSpinning) {
+                e.preventDefault();
+                wheelEngine.spin();
+            }
+        });
+    }
+    return wheelEngine;
+}
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = WheelEngine;
+}

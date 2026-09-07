@@ -1,0 +1,630 @@
+/* Dice Container */
+.dice-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+}
+
+.dice-controls-top {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dice-count-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.dice-count-selector label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.dice-count-selector select {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    min-width: 120px;
+    cursor: pointer;
+}
+
+/* Dice Wrapper */
+.dice-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    min-height: 200px;
+    padding: 2rem;
+    perspective: 1000px;
+}
+
+/* Individual Die */
+.die {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+    cursor: pointer;
+}
+
+.die.rolling {
+    animation: diceRoll 1s ease-out;
+}
+
+@keyframes diceRoll {
+    0% {
+        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    }
+    25% {
+        transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg);
+    }
+    50% {
+        transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg);
+    }
+    75% {
+        transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg);
+    }
+    100% {
+        transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg);
+    }
+}
+
+/* Die Faces */
+.die-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+    border: 3px solid var(--accent-color);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dice-text-color);
+    box-shadow: var(--shadow-md);
+    backface-visibility: hidden;
+    user-select: none;
+}
+
+/* Die Face Positions */
+.die-face.front {
+    transform: translateZ(50px);
+}
+
+.die-face.back {
+    transform: rotateY(180deg) translateZ(50px);
+}
+
+.die-face.right {
+    transform: rotateY(90deg) translateZ(50px);
+}
+
+.die-face.left {
+    transform: rotateY(-90deg) translateZ(50px);
+}
+
+.die-face.top {
+    transform: rotateX(90deg) translateZ(50px);
+}
+
+.die-face.bottom {
+    transform: rotateX(-90deg) translateZ(50px);
+}
+
+/* Die Dots Pattern */
+.die-face .dot {
+    width: 16px;
+    height: 16px;
+    background: var(--dice-dot-color);
+    border-radius: 50%;
+    position: absolute;
+}
+
+/* Face 1 - Center dot */
+.die-face[data-value="1"] .dot {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Face 2 - Diagonal dots */
+.die-face[data-value="2"] .dot:nth-child(1) {
+    top: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="2"] .dot:nth-child(2) {
+    bottom: 20%;
+    right: 20%;
+}
+
+/* Face 3 - Diagonal with center */
+.die-face[data-value="3"] .dot:nth-child(1) {
+    top: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="3"] .dot:nth-child(2) {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.die-face[data-value="3"] .dot:nth-child(3) {
+    bottom: 20%;
+    right: 20%;
+}
+
+/* Face 4 - Corners */
+.die-face[data-value="4"] .dot:nth-child(1) {
+    top: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="4"] .dot:nth-child(2) {
+    top: 20%;
+    right: 20%;
+}
+
+.die-face[data-value="4"] .dot:nth-child(3) {
+    bottom: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="4"] .dot:nth-child(4) {
+    bottom: 20%;
+    right: 20%;
+}
+
+/* Face 5 - Corners with center */
+.die-face[data-value="5"] .dot:nth-child(1) {
+    top: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="5"] .dot:nth-child(2) {
+    top: 20%;
+    right: 20%;
+}
+
+.die-face[data-value="5"] .dot:nth-child(3) {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.die-face[data-value="5"] .dot:nth-child(4) {
+    bottom: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="5"] .dot:nth-child(5) {
+    bottom: 20%;
+    right: 20%;
+}
+
+/* Face 6 - Two rows of three */
+.die-face[data-value="6"] .dot:nth-child(1) {
+    top: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="6"] .dot:nth-child(2) {
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.die-face[data-value="6"] .dot:nth-child(3) {
+    top: 20%;
+    right: 20%;
+}
+
+.die-face[data-value="6"] .dot:nth-child(4) {
+    bottom: 20%;
+    left: 20%;
+}
+
+.die-face[data-value="6"] .dot:nth-child(5) {
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.die-face[data-value="6"] .dot:nth-child(6) {
+    bottom: 20%;
+    right: 20%;
+}
+
+/* Custom Image/Text on Die Face */
+.die-face .face-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    text-align: center;
+    word-wrap: break-word;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.die-face .face-content img {
+    max-width: 80%;
+    max-height: 80%;
+    object-fit: contain;
+}
+
+/* Dice Controls */
+.dice-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.roll-btn {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+    color: white;
+    border: none;
+    border-radius: var(--radius-xl);
+    padding: 1rem 3rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-lg);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    min-width: 200px;
+}
+
+.roll-btn:hover:not(:disabled) {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: var(--shadow-xl);
+}
+
+.roll-btn:active:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+}
+
+.roll-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.roll-btn.rolling {
+    animation: rollPulse 1s ease-in-out infinite;
+}
+
+@keyframes rollPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.roll-text {
+    display: inline-block;
+}
+
+.roll-btn.rolling .roll-text {
+    animation: textShake 0.5s ease-in-out infinite;
+}
+
+@keyframes textShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-2px);
+    }
+    75% {
+        transform: translateX(2px);
+    }
+}
+
+/* Dice Bounce Animation */
+.die.bounce {
+    animation: diceBounce 0.3s ease-out;
+}
+
+@keyframes diceBounce {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* 2D Dice Alternative (for simpler rendering) */
+.die-2d {
+    width: 80px;
+    height: 80px;
+    background: var(--bg-primary);
+    border: 3px solid var(--accent-color);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dice-text-color);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+    cursor: pointer;
+}
+
+.die-2d:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.die-2d.rolling {
+    animation: die2DRoll 0.5s ease-out;
+}
+
+@keyframes die2DRoll {
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.1);
+    }
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+/* Multi-sided Dice (polygons) */
+.die-polygon {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.die-polygon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.die-polygon .polygon-face {
+    fill: var(--bg-primary);
+    stroke: var(--accent-color);
+    stroke-width: 3;
+    transition: all var(--transition-normal);
+}
+
+.die-polygon:hover .polygon-face {
+    fill: var(--bg-secondary);
+}
+
+.die-polygon .polygon-text {
+    fill: var(--dice-text-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
+
+/* Dice Result Display */
+.dice-result {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-primary);
+    border: 3px solid var(--accent-color);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-xl);
+    z-index: 1000;
+    text-align: center;
+    animation: resultPop 0.3s ease-out;
+}
+
+@keyframes resultPop {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+.dice-result h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.dice-result .result-value {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+}
+
+.dice-result button {
+    margin-top: 1rem;
+}
+
+/* Responsive Dice */
+@media (max-width: 768px) {
+    .dice-container {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+    
+    .dice-count-selector {
+        padding: 0.5rem 1rem;
+    }
+    
+    .dice-count-selector label {
+        font-size: 0.85rem;
+    }
+    
+    .dice-count-selector select {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        min-width: 100px;
+    }
+    
+    .dice-wrapper {
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+    
+    .die {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .die-face {
+        font-size: 1.5rem;
+    }
+    
+    .die-face .dot {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .die-2d {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .die-polygon {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .roll-btn {
+        padding: 0.75rem 2rem;
+        font-size: 1.25rem;
+        min-width: 160px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dice-container {
+        padding: 0.5rem;
+        gap: 1rem;
+    }
+    
+    .dice-wrapper {
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .die {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .die-face {
+        font-size: 1.2rem;
+    }
+    
+    .die-face .dot {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .die-2d {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .die-polygon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .roll-btn {
+        padding: 0.6rem 1.5rem;
+        font-size: 1rem;
+        min-width: 140px;
+        letter-spacing: 1px;
+    }
+}
+
+/* Dice Accessibility */
+.die:focus,
+.die-2d:focus,
+.die-polygon:focus {
+    outline: 3px solid var(--accent-color);
+    outline-offset: 4px;
+}
+
+/* Dice Touch Feedback */
+@media (hover: none) {
+    .die:active,
+    .die-2d:active {
+        transform: scale(0.95);
+    }
+    
+    .roll-btn:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Dice Loading State */
+.die.loading,
+.die-2d.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.die.loading::after,
+.die-2d.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--bg-tertiary);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: diceLoading 1s linear infinite;
+}
+
+@keyframes diceLoading {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
