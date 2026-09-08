@@ -96,25 +96,29 @@ class ShareManager {
 
             // Restore entry keys
             if (state.entries) {
-                state.entries = state.entries.map(entry => {
-                    if (entry.t) {
-                        entry.text = entry.t;
-                        delete entry.t;
-                    }
-                    if (entry.c) {
-                        entry.color = entry.c;
-                        delete entry.c;
-                    }
-                    if (entry.w) {
-                        entry.weight = entry.w;
-                        delete entry.w;
-                    }
-                    if (entry.i) {
-                        entry.image = entry.i;
-                        delete entry.i;
-                    }
-                    return entry;
-                });
+                if (Array.isArray(state.entries)) {
+                    state.entries = state.entries.map(entry => {
+                        if (entry.t) {
+                            entry.text = entry.t;
+                            delete entry.t;
+                        }
+                        if (entry.c) {
+                            entry.color = entry.c;
+                            delete entry.c;
+                        }
+                        if (entry.w) {
+                            entry.weight = entry.w;
+                            delete entry.w;
+                        }
+                        if (entry.i) {
+                            entry.image = entry.i;
+                            delete entry.i;
+                        }
+                        return entry;
+                    });
+                } else {
+                    state.entries = [];
+                }
             }
 
             return state;
