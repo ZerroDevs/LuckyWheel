@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="styles/themes.css">
     <link rel="stylesheet" href="styles/wheel.css">
     <link rel="stylesheet" href="styles/dice.css">
+    <link rel="stylesheet" href="styles/slots.css">
+    <link rel="stylesheet" href="styles/slots.css">
+    <link rel="stylesheet" href="styles/mysterybox.css">
+    <link rel="stylesheet" href="styles/blackjack.css">
+    <link rel="stylesheet" href="styles/coinflip.css">
     <link rel="stylesheet" href="styles/modals.css">
 </head>
 <body>
@@ -40,6 +45,22 @@
         <button id="diceTab" class="tab-btn" data-mode="dice">
             <span class="tab-icon">🎲</span>
             <span class="tab-label">3D Dice Roller</span>
+        </button>
+        <button id="slotTab" class="tab-btn" data-mode="slot">
+            <span class="tab-icon">🎰</span>
+            <span class="tab-label">Slot Machine</span>
+        </button>
+        <button id="boxTab" class="tab-btn" data-mode="box">
+            <span class="tab-icon">🎁</span>
+            <span class="tab-label">Mystery Boxes</span>
+        </button>
+        <button id="blackjackTab" class="tab-btn" data-mode="blackjack">
+            <span class="tab-icon">🃏</span>
+            <span class="tab-label">Blackjack</span>
+        </button>
+        <button id="coinflipTab" class="tab-btn" data-mode="coinflip">
+            <span class="tab-icon">🪙</span>
+            <span class="tab-label">Coin Flip</span>
         </button>
     </nav>
 
@@ -100,6 +121,113 @@
             </div>
         </section>
 
+        <!-- Slot Machine Mode -->
+        <section id="slotSection" class="mode-section">
+            <div class="slot-container">
+                <div class="slot-controls-top">
+                    <div class="slot-count-selector">
+                        <label for="slotCount">Number of Reels:</label>
+                        <select id="slotCount">
+                            <option value="1">1 Reel</option>
+                            <option value="2">2 Reels</option>
+                            <option value="3" selected>3 Reels</option>
+                            <option value="4">4 Reels</option>
+                            <option value="5">5 Reels</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="slot-machine-wrapper">
+                    <div class="slot-machine-frame" id="slotWrapper">
+                        <!-- Reels will be generated here -->
+                    </div>
+                </div>
+                <div class="slot-controls">
+                    <button id="pullBtn" class="spin-btn">
+                        <span class="spin-text">PULL!</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mystery Box Mode -->
+        <section id="boxSection" class="mode-section">
+            <div class="box-container">
+                <div class="box-controls-top">
+                    <div class="box-count-selector">
+                        <label for="boxCount">Number of Boxes:</label>
+                        <select id="boxCount">
+                            <option value="3" selected>3 Boxes</option>
+                            <option value="4">4 Boxes</option>
+                            <option value="5">5 Boxes</option>
+                            <option value="10">10 Boxes</option>
+                        </select>
+                    </div>
+                </div>
+                <h2 class="box-prompt">Pick a Mystery Box!</h2>
+                <div class="box-wrapper" id="boxWrapper">
+                    <!-- Boxes will be generated here -->
+                </div>
+                <div class="box-controls">
+                    <button id="resetBoxesBtn" class="spin-btn">
+                        <span class="spin-text">RESET BOXES</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blackjack Mode -->
+        <section id="blackjackSection" class="mode-section">
+            <div class="blackjack-container">
+                <div class="blackjack-table">
+                    <div id="bjShoe" class="bj-shoe"></div>
+                    <div class="bj-status" id="bjStatus">Place your bet!</div>
+                    
+                    <div class="hand-area dealer-area">
+                        <div class="hand-title">Dealer (<span id="dealerScore">0</span>)</div>
+                        <div class="cards-container" id="dealerHand"></div>
+                    </div>
+
+                    <div class="hand-area player-area">
+                        <div class="cards-container" id="playerHand"></div>
+                        <div class="hand-title">Player (<span id="playerScore">0</span>)</div>
+                    </div>
+
+                    <div class="bj-controls">
+                        <button id="bjHitBtn" class="bj-btn bj-btn-hit" disabled>HIT</button>
+                        <button id="bjStandBtn" class="bj-btn bj-btn-stand" disabled>STAND</button>
+                    </div>
+                    <button id="bjDealBtn" class="bj-btn bj-btn-deal">DEAL</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Coin Flip Mode -->
+        <section id="coinflipSection" class="mode-section">
+            <div class="coinflip-container">
+                <h2 class="coin-prompt">Heads or Tails?</h2>
+                <div class="coin-wrapper" id="coinWrapper">
+                    <div class="coin" id="coin">
+                        <div class="coin-face coin-heads">
+                            <div class="coin-title">HEADS</div>
+                            <div id="cfHeadsContent"></div>
+                        </div>
+                        <div class="coin-face coin-tails">
+                            <div class="coin-title">TAILS</div>
+                            <div id="cfTailsContent"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="coin-controls">
+                    <button id="cfShuffleBtn" class="spin-btn" style="background: #e67e22;">
+                        <span class="spin-text">SHUFFLE ENTRIES</span>
+                    </button>
+                    <button id="cfFlipBtn" class="spin-btn">
+                        <span class="spin-text">FLIP COIN</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <!-- Entries Panel -->
         <aside class="entries-panel">
             <div class="panel-header">
@@ -132,6 +260,7 @@
                 <div class="editor-tabs">
                     <button class="editor-tab active" data-tab="list">List View</button>
                     <button class="editor-tab" data-tab="bulk">Bulk Import</button>
+                    <button class="editor-tab" data-tab="presets">Presets</button>
                 </div>
                 
                 <!-- List View Tab -->
@@ -146,6 +275,22 @@
                 <div id="bulkTab" class="editor-tab-content">
                     <textarea id="bulkImport" placeholder="Enter entries separated by new lines..."></textarea>
                     <button id="importBulkBtn" class="btn-primary">Import</button>
+                </div>
+
+                <!-- Presets Tab -->
+                <div id="presetsTab" class="editor-tab-content">
+                    <div class="preset-controls">
+                        <input type="text" id="newPresetName" placeholder="Preset Name">
+                        <button id="savePresetBtn" class="btn-primary">Save Current as Preset</button>
+                    </div>
+                    <div class="presets-list" id="presetsList">
+                        <!-- Presets will be listed here -->
+                    </div>
+                    <div class="preset-export-controls">
+                        <button id="exportPresetBtn" class="btn-secondary">Export to File</button>
+                        <input type="file" id="importPresetFile" accept=".json" style="display: none;">
+                        <button id="importPresetBtn" class="btn-secondary" onclick="document.getElementById('importPresetFile').click()">Import from File</button>
+                    </div>
                 </div>
 
                 <!-- Weighting Options -->
@@ -300,6 +445,10 @@
     <script src="js/confetti.js"></script>
     <script src="js/wheel.js"></script>
     <script src="js/dice.js"></script>
+    <script src="js/slots.js"></script>
+    <script src="js/mysterybox.js"></script>
+    <script src="js/blackjack.js"></script>
+    <script src="js/coinflip.js"></script>
     <script src="js/entriesManager.js"></script>
     <script src="js/historyManager.js"></script>
     <script src="js/share.js"></script>

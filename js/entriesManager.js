@@ -9,6 +9,8 @@ class EntriesManager {
         this.customWeights = false;
         this.showPercentages = false;
         this.storageKey = 'luckywheel-entries';
+        this.presetsKey = 'luckywheel-presets';
+        this.presets = {};
         this.colorPresets = {
             rainbow: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#fd79a8', '#a29bfe'],
             pastel: ['#ffb3ba', '#bae1ff', '#baffc9', '#ffffba', '#ffdfba', '#e0bbff', '#ff9aa2', '#c7ceea'],
@@ -39,6 +41,12 @@ class EntriesManager {
             } else {
                 this.entries = this.getDefaultEntries();
             }
+            // Load presets
+            const savedPresets = localStorage.getItem(this.presetsKey);
+            if (savedPresets) {
+                this.presets = JSON.parse(savedPresets);
+            }
+            
             // Render entries after loading
             this.renderEntries();
         } catch (error) {
@@ -63,6 +71,125 @@ class EntriesManager {
         } catch (error) {
             console.error('Error saving entries:', error);
         }
+    }
+
+    /**
+     * Save presets to localStorage
+     */
+    savePresets() {
+        try {
+            localStorage.setItem(this.presetsKey, JSON.stringify(this.presets));
+        } catch (error) {
+            console.error('Error saving presets:', error);
+        }
+    }
+
+    /**
+     * Preset Management
+     */
+    savePreset(name) {
+        if (!name.trim()) return false;
+        this.presets[name] = {
+            entries: JSON.parse(JSON.stringify(this.entries)),
+            customWeights: this.customWeights,
+            showPercentages: this.showPercentages,
+            currentPreset: this.currentPreset
+        };
+        this.savePresets();
+        this.renderPresetsList();
+        return true;
+    }
+
+    loadPreset(name) {
+        if (!this.presets[name]) return false;
+        const preset = this.presets[name];
+        this.entries = JSON.parse(JSON.stringify(preset.entries));
+        this.customWeights = preset.customWeights || false;
+        this.showPercentages = preset.showPercentages || false;
+        this.currentPreset = preset.currentPreset || 'rainbow';
+        
+        // Ensure checkboxes reflect state
+        const customWeightsCheckbox = document.getElementById('customWeights');
+        const showPercentagesCheckbox = document.getElementById('showPercentages');
+        if (customWeightsCheckbox) customWeightsCheckbox.checked = this.customWeights;
+        if (showPercentagesCheckbox) showPercentagesCheckbox.checked = this.showPercentages;
+
+        this.saveEntries();
+        this.renderEntriesEditor();
+        window.dispatchEvent(new Event('entriesUpdated'));
+        return true;
+    }
+
+    deletePreset(name) {
+        if (this.presets[name]) {
+            delete this.presets[name];
+            this.savePresets();
+            this.renderPresetsList();
+        }
+    }
+
+    exportPresets() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.presets));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "luckywheel-presets.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    importPresets(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            if (typeof data === 'object') {
+                this.presets = { ...this.presets, ...data };
+                this.savePresets();
+                this.renderPresetsList();
+                return true;
+            }
+        } catch (e) {
+            console.error("Invalid preset JSON");
+        }
+        return false;
+    }
+
+    renderPresetsList() {
+        const container = document.getElementById('presetsList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        const presetNames = Object.keys(this.presets);
+        
+        if (presetNames.length === 0) {
+            container.innerHTML = '<p class="text-center" style="color: var(--text-secondary); padding: 1rem;">No presets saved.</p>';
+            return;
+        }
+
+        presetNames.forEach(name => {
+            const el = document.createElement('div');
+            el.className = 'entry-item'; // reuse styles
+            el.innerHTML = `
+                <div class="entry-text" style="font-weight: bold;">${name}</div>
+                <div class="entry-weight">${this.presets[name].entries.length} items</div>
+                <div class="editor-actions">
+                    <button class="icon-btn-small load-preset-btn" title="Load Preset">📂</button>
+                    <button class="icon-btn-small delete-preset-btn" title="Delete Preset" style="color: var(--danger-color);">🗑️</button>
+                </div>
+            `;
+            
+            el.querySelector('.load-preset-btn').addEventListener('click', () => {
+                this.loadPreset(name);
+                if (soundEffects) soundEffects.playSuccess();
+            });
+            
+            el.querySelector('.delete-preset-btn').addEventListener('click', () => {
+                if (confirm(`Delete preset '${name}'?`)) {
+                    this.deletePreset(name);
+                }
+            });
+            
+            container.appendChild(el);
+        });
     }
 
     /**
@@ -537,6 +664,44 @@ class EntriesManager {
                 this.closeEntriesModal();
             });
         }
+        
+        // Preset Event Listeners
+        const savePresetBtn = document.getElementById('savePresetBtn');
+        const newPresetName = document.getElementById('newPresetName');
+        const exportPresetBtn = document.getElementById('exportPresetBtn');
+        const importPresetFile = document.getElementById('importPresetFile');
+
+        if (savePresetBtn && newPresetName) {
+            savePresetBtn.addEventListener('click', () => {
+                const name = newPresetName.value.trim();
+                if (name) {
+                    this.savePreset(name);
+                    newPresetName.value = '';
+                    if (soundEffects) soundEffects.playSuccess();
+                }
+            });
+        }
+
+        if (exportPresetBtn) {
+            exportPresetBtn.addEventListener('click', () => {
+                this.exportPresets();
+            });
+        }
+
+        if (importPresetFile) {
+            importPresetFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const success = this.importPresets(event.target.result);
+                    if (success && soundEffects) soundEffects.playSuccess();
+                };
+                reader.readAsText(file);
+                // Reset file input
+                importPresetFile.value = '';
+            });
+        }
     }
 
     /**
@@ -559,6 +724,7 @@ class EntriesManager {
         }
 
         this.renderEntriesEditor();
+        this.renderPresetsList();
 
         if (modal) modal.classList.add('active');
         if (overlay) overlay.classList.add('active');

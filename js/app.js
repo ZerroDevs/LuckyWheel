@@ -5,7 +5,7 @@
 
 class App {
     constructor() {
-        this.currentMode = 'wheel';
+        this.currentMode = localStorage.getItem('luckywheel-mode') || 'wheel';
         this.settings = {
             spinDuration: 5,
             soundVolume: 50,
@@ -23,6 +23,9 @@ class App {
         this.setupSettingsModal();
         this.loadSharedState();
         this.initializeEngines();
+        
+        // Ensure the correct tab is highlighted and active on load
+        this.switchMode(this.currentMode);
     }
 
     /**
@@ -35,6 +38,18 @@ class App {
         // Initialize dice
         diceEngine = initDice();
         
+        // Initialize slots
+        slotEngine = typeof initSlots !== 'undefined' ? initSlots() : null;
+        
+        // Initialize mystery box
+        boxEngine = typeof initMysteryBox !== 'undefined' ? initMysteryBox() : null;
+
+        // Initialize blackjack
+        blackjackEngine = typeof initBlackjack !== 'undefined' ? initBlackjack() : null;
+        
+        // Initialize coinflip
+        coinflipEngine = typeof initCoinFlip !== 'undefined' ? initCoinFlip() : null;
+        
         // Initialize confetti
         initConfetti();
         
@@ -45,6 +60,15 @@ class App {
             }
             if (diceEngine && entriesManager) {
                 diceEngine.setEntries(entriesManager.getWeightedEntries());
+            }
+            if (slotEngine && entriesManager) {
+                slotEngine.setEntries(entriesManager.getWeightedEntries());
+            }
+            if (boxEngine && entriesManager) {
+                boxEngine.setEntries(entriesManager.getWeightedEntries());
+            }
+            if (coinflipEngine && entriesManager) {
+                coinflipEngine.setEntries(entriesManager.getWeightedEntries());
             }
         });
         
@@ -129,18 +153,50 @@ class App {
     setupTabSwitching() {
         const wheelTab = document.getElementById('wheelTab');
         const diceTab = document.getElementById('diceTab');
-        const wheelSection = document.getElementById('wheelSection');
-        const diceSection = document.getElementById('diceSection');
+        const slotTab = document.getElementById('slotTab');
+        const boxTab = document.getElementById('boxTab');
+        const blackjackTab = document.getElementById('blackjackTab');
+        const coinflipTab = document.getElementById('coinflipTab');
 
-        if (wheelTab && diceTab && wheelSection && diceSection) {
+        if (wheelTab) {
             wheelTab.addEventListener('click', () => {
                 this.switchMode('wheel');
-                soundEffects.playClick();
+                if (typeof soundEffects !== 'undefined') soundEffects.playClick();
             });
-
+        }
+        
+        if (diceTab) {
             diceTab.addEventListener('click', () => {
                 this.switchMode('dice');
-                soundEffects.playClick();
+                if (typeof soundEffects !== 'undefined') soundEffects.playClick();
+            });
+        }
+        
+        if (slotTab) {
+            slotTab.addEventListener('click', () => {
+                this.switchMode('slot');
+                if (typeof soundEffects !== 'undefined') soundEffects.playClick();
+            });
+        }
+        
+        if (boxTab) {
+            boxTab.addEventListener('click', () => {
+                this.switchMode('box');
+                if (typeof soundEffects !== 'undefined') soundEffects.playClick();
+            });
+        }
+        
+        if (blackjackTab) {
+            blackjackTab.addEventListener('click', () => {
+                this.switchMode('blackjack');
+                if (typeof soundEffects !== 'undefined') soundEffects.playClick();
+            });
+        }
+        
+        if (coinflipTab) {
+            coinflipTab.addEventListener('click', () => {
+                this.switchMode('coinflip');
+                if (typeof soundEffects !== 'undefined') soundEffects.playClick();
             });
         }
     }
@@ -150,32 +206,40 @@ class App {
      */
     switchMode(mode) {
         this.currentMode = mode;
+        localStorage.setItem('luckywheel-mode', mode);
 
-        const wheelTab = document.getElementById('wheelTab');
-        const diceTab = document.getElementById('diceTab');
-        const wheelSection = document.getElementById('wheelSection');
-        const diceSection = document.getElementById('diceSection');
+        const tabs = {
+            'wheel': { tab: document.getElementById('wheelTab'), section: document.getElementById('wheelSection') },
+            'dice': { tab: document.getElementById('diceTab'), section: document.getElementById('diceSection') },
+            'slot': { tab: document.getElementById('slotTab'), section: document.getElementById('slotSection') },
+            'box': { tab: document.getElementById('boxTab'), section: document.getElementById('boxSection') },
+            'blackjack': { tab: document.getElementById('blackjackTab'), section: document.getElementById('blackjackSection') },
+            'coinflip': { tab: document.getElementById('coinflipTab'), section: document.getElementById('coinflipSection') }
+        };
 
-        if (mode === 'wheel') {
-            wheelTab.classList.add('active');
-            diceTab.classList.remove('active');
-            wheelSection.classList.add('active');
-            diceSection.classList.remove('active');
-            
-            // Redraw wheel when switching to wheel mode
-            if (wheelEngine) {
-                wheelEngine.draw();
-            }
-        } else {
-            diceTab.classList.add('active');
-            wheelTab.classList.remove('active');
-            diceSection.classList.add('active');
-            wheelSection.classList.remove('active');
-            
-            // Re-render dice when switching to dice mode
-            if (diceEngine) {
-                diceEngine.renderDice();
-            }
+        // Reset all
+        Object.values(tabs).forEach(t => {
+            if (t.tab) t.tab.classList.remove('active');
+            if (t.section) t.section.classList.remove('active');
+        });
+
+        // Activate current
+        const current = tabs[mode];
+        if (current.tab) current.tab.classList.add('active');
+        if (current.section) current.section.classList.add('active');
+
+        if (mode === 'wheel' && typeof wheelEngine !== 'undefined' && wheelEngine) {
+            wheelEngine.draw();
+        } else if (mode === 'dice' && typeof diceEngine !== 'undefined' && diceEngine) {
+            diceEngine.renderDice();
+        } else if (mode === 'slot' && typeof slotEngine !== 'undefined' && slotEngine) {
+            slotEngine.renderReels();
+        } else if (mode === 'box' && typeof boxEngine !== 'undefined' && boxEngine) {
+            boxEngine.renderBoxes();
+        } else if (mode === 'blackjack' && typeof blackjackEngine !== 'undefined' && blackjackEngine) {
+            blackjackEngine.renderBoard();
+        } else if (mode === 'coinflip' && typeof coinflipEngine !== 'undefined' && coinflipEngine) {
+            coinflipEngine.renderCoinFaces();
         }
     }
 
@@ -184,16 +248,18 @@ class App {
      */
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Space to spin/roll
+            // Space to spin/roll/pull
             if (e.code === 'Space') {
-                const activeSection = this.currentMode === 'wheel' ? 'wheelSection' : 'diceSection';
+                const activeSection = this.currentMode + 'Section';
                 const section = document.getElementById(activeSection);
                 if (section && section.classList.contains('active')) {
                     e.preventDefault();
-                    if (this.currentMode === 'wheel' && wheelEngine && !wheelEngine.isSpinning) {
+                    if (this.currentMode === 'wheel' && typeof wheelEngine !== 'undefined' && wheelEngine && !wheelEngine.isSpinning) {
                         wheelEngine.spin();
-                    } else if (this.currentMode === 'dice' && diceEngine && !diceEngine.isRolling) {
+                    } else if (this.currentMode === 'dice' && typeof diceEngine !== 'undefined' && diceEngine && !diceEngine.isRolling) {
                         diceEngine.roll();
+                    } else if (this.currentMode === 'slot' && typeof slotEngine !== 'undefined' && slotEngine && !slotEngine.isSpinning) {
+                        slotEngine.spin();
                     }
                 }
             }

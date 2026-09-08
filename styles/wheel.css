@@ -19,14 +19,14 @@
 }
 
 .wheels-wrapper.count-1 .wheel-wrapper {
-    width: 500px;
-    height: 500px;
+    width: min(500px, 90vw);
+    height: min(500px, 90vw);
 }
 .wheels-wrapper.count-2 .wheel-wrapper,
 .wheels-wrapper.count-3 .wheel-wrapper,
 .wheels-wrapper.count-4 .wheel-wrapper {
-    width: 350px;
-    height: 350px;
+    width: min(350px, 45vw);
+    height: min(350px, 45vw);
 }
 
 .wheel-wrapper {

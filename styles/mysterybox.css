@@ -1,0 +1,231 @@
+/* Premium Mystery Box Styles */
+.box-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    min-height: 500px;
+}
+
+.box-prompt {
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 2rem;
+    font-weight: 900;
+}
+
+.box-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+}
+
+/* 3D Treasure Chest */
+.mystery-box {
+    width: 140px;
+    height: 120px;
+    background: linear-gradient(to bottom, #8B4513 0%, #5C3A21 100%);
+    border-radius: 10px 10px 5px 5px;
+    box-shadow: 
+        inset 0 10px 15px rgba(255,255,255,0.2),
+        inset 0 -10px 20px rgba(0,0,0,0.5),
+        0 15px 25px rgba(0,0,0,0.4);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid #3e2723;
+}
+
+/* Chest Lid / Straps */
+.mystery-box::before {
+    content: '';
+    position: absolute;
+    top: -4px; left: 20px; right: 20px; bottom: -4px;
+    border-left: 10px solid #ffca28;
+    border-right: 10px solid #ffca28;
+    box-shadow: 
+        inset 0 0 10px rgba(0,0,0,0.5),
+        0 0 5px rgba(0,0,0,0.5);
+}
+
+/* Lock */
+.mystery-box::after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 35px;
+    background: #ffd54f;
+    border: 3px solid #ff8f00;
+    border-radius: 5px 5px 15px 15px;
+    top: 45%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+}
+
+.mystery-box:hover {
+    transform: scale(1.15) translateY(-15px);
+    box-shadow: 
+        inset 0 10px 15px rgba(255,255,255,0.2),
+        inset 0 -10px 20px rgba(0,0,0,0.5),
+        0 30px 40px rgba(0,0,0,0.5),
+        0 0 30px rgba(255, 215, 0, 0.4);
+}
+
+/* Shaking animation when ready */
+.mystery-box.shaking {
+    animation: chestShake 2.5s infinite cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes chestShake {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 30%, 50%, 70%, 90% { transform: rotate(-8deg) scale(1.05); }
+    20%, 40%, 60%, 80% { transform: rotate(8deg) scale(1.05); }
+}
+
+/* Opening animation */
+.mystery-box.opening {
+    animation: chestOpen 1.2s forwards;
+    pointer-events: none;
+}
+
+@keyframes chestOpen {
+    0% { transform: scale(1); filter: brightness(1); }
+    20% { transform: scale(0.8) translateY(20px); filter: brightness(0.8); }
+    50% { transform: scale(1.3) translateY(-40px) rotate(10deg); filter: brightness(1.5); box-shadow: 0 0 50px gold; }
+    100% { transform: scale(0) translateY(-100px); opacity: 0; filter: brightness(3); }
+}
+
+/* Rays behind the revealed item */
+.box-rays {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: repeating-conic-gradient(
+        transparent 0 15deg,
+        rgba(255, 215, 0, 0.4) 15deg 30deg
+    );
+    border-radius: 50%;
+    animation: spinRays 8s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s;
+}
+
+@keyframes spinRays {
+    100% { transform: rotate(360deg); }
+}
+
+.box-revealed-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 250px;
+    height: 250px;
+    opacity: 0;
+    transform: scale(0) translateY(50px);
+    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 2;
+}
+
+.mystery-box-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 250px;
+    height: 250px;
+}
+
+.mystery-box-container.opened .mystery-box {
+    display: none;
+}
+
+.mystery-box-container.opened .box-rays {
+    opacity: 1;
+}
+
+.mystery-box-container.opened .box-revealed-container {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+.box-revealed-item {
+    font-size: 2rem;
+    font-weight: 900;
+    text-align: center;
+    color: var(--text-primary);
+    text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+    padding: 20px 30px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 0 20px rgba(255,255,255,0.5);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 4px solid var(--accent-color);
+    animation: floatItem 3s infinite ease-in-out;
+}
+
+@keyframes floatItem {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.box-revealed-item img {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.mystery-box-container.disabled .mystery-box {
+    opacity: 0.3;
+    filter: grayscale(1) blur(2px);
+    pointer-events: none;
+    animation: none;
+    transform: scale(0.9);
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+    .box-wrapper {
+        gap: 1.5rem;
+    }
+    
+    .mystery-box-container {
+        width: clamp(100px, 30vw, 150px);
+        height: clamp(100px, 30vw, 150px);
+    }
+    
+    .mystery-box {
+        width: clamp(70px, 25vw, 100px);
+        height: clamp(60px, 20vw, 85px);
+    }
+    
+    .box-revealed-container {
+        width: clamp(150px, 50vw, 200px);
+        height: clamp(150px, 50vw, 200px);
+    }
+    
+    .box-revealed-item {
+        font-size: clamp(1rem, 4vw, 1.5rem);
+        padding: 10px 15px;
+    }
+    
+    .box-revealed-item img {
+        max-width: clamp(40px, 15vw, 60px);
+        max-height: clamp(40px, 15vw, 60px);
+    }
+}
