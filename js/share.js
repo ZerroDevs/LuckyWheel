@@ -107,14 +107,22 @@ class ShareManager {
                     });
                 } 
                 // If it's an object with an entries array (new format)
-                else if (state.entries.entries && Array.isArray(state.entries.entries)) {
-                    state.entries.entries = state.entries.entries.map(entry => {
-                        if (entry.t) { entry.text = entry.t; delete entry.t; }
-                        if (entry.c) { entry.color = entry.c; delete entry.c; }
-                        if (entry.w) { entry.weight = entry.w; delete entry.w; }
-                        if (entry.i) { entry.image = entry.i; delete entry.i; }
-                        return entry;
-                    });
+                else {
+                    // Restore compressed inner array if it exists
+                    if (state.entries.e) {
+                        state.entries.entries = state.entries.e;
+                        delete state.entries.e;
+                    }
+                    
+                    if (state.entries.entries && Array.isArray(state.entries.entries)) {
+                        state.entries.entries = state.entries.entries.map(entry => {
+                            if (entry.t) { entry.text = entry.t; delete entry.t; }
+                            if (entry.c) { entry.color = entry.c; delete entry.c; }
+                            if (entry.w) { entry.weight = entry.w; delete entry.w; }
+                            if (entry.i) { entry.image = entry.i; delete entry.i; }
+                            return entry;
+                        });
+                    }
                 }
             }
 
