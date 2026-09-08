@@ -196,9 +196,9 @@
     font-size: 0.95rem;
 }
 
-.entry-weight-input {
-    width: 80px;
-    padding: 0.5rem;
+input[type="number"].entry-weight-input {
+    width: 60px;
+    padding: 0.25rem;
     font-size: 0.95rem;
     text-align: center;
 }

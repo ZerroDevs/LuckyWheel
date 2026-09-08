@@ -3,6 +3,47 @@
  * Main initialization, tab switching, global state, keyboard shortcuts, and URL hash routing
  */
 
+// Global Confirm Function
+window.showConfirm = function(message, callback) {
+    const modal = document.getElementById('confirmModal');
+    const overlay = document.getElementById('overlay');
+    const msgEl = document.getElementById('confirmMessage');
+    const acceptBtn = document.getElementById('acceptConfirmBtn');
+    const cancelBtn = document.getElementById('cancelConfirmBtn');
+    const closeBtn = document.getElementById('closeConfirmModal');
+    
+    if (!modal || !msgEl || !acceptBtn || !cancelBtn) {
+        if (confirm(message)) callback();
+        return;
+    }
+    
+    msgEl.textContent = message;
+    
+    const closeModal = () => {
+        modal.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        // Clean up listeners
+        acceptBtn.onclick = null;
+        cancelBtn.onclick = null;
+        if (closeBtn) closeBtn.onclick = null;
+    };
+    
+    acceptBtn.onclick = () => {
+        closeModal();
+        callback();
+    };
+    
+    cancelBtn.onclick = closeModal;
+    if (closeBtn) closeBtn.onclick = closeModal;
+    
+    modal.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+    
+    if (typeof soundEffects !== 'undefined' && soundEffects) {
+        soundEffects.playClick();
+    }
+};
+
 class App {
     constructor() {
         this.currentMode = localStorage.getItem('luckywheel-mode') || 'wheel';

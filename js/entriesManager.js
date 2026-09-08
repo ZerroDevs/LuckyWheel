@@ -183,9 +183,9 @@ class EntriesManager {
             });
             
             el.querySelector('.delete-preset-btn').addEventListener('click', () => {
-                if (confirm(`Delete preset '${name}'?`)) {
+                window.showConfirm(`Delete preset '${name}'?`, () => {
                     this.deletePreset(name);
-                }
+                });
             });
             
             container.appendChild(el);
@@ -246,6 +246,17 @@ class EntriesManager {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Clear all entries
+     */
+    clearAllEntries() {
+        this.entries = [];
+        this.saveEntries();
+        this.renderEntries();
+        this.renderEntriesEditor();
+        window.dispatchEvent(new Event('entriesUpdated'));
     }
 
     /**
@@ -598,6 +609,16 @@ class EntriesManager {
                 this.addEntry();
                 this.renderEntriesEditor();
                 soundEffects.playClick();
+            });
+        }
+        
+        const clearBtn = document.getElementById('clearEntriesBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                window.showConfirm('Are you sure you want to delete all entries?', () => {
+                    this.clearAllEntries();
+                    if (typeof soundEffects !== 'undefined') soundEffects.playClick();
+                });
             });
         }
 
