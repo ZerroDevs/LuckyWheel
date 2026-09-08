@@ -475,7 +475,7 @@ class App {
             if (sharedState && shareManager.validateState(sharedState)) {
                 // Load entries
                 if (sharedState.entries && entriesManager) {
-                    entriesManager.loadState(sharedState);
+                    entriesManager.loadState(sharedState.entries);
                 }
                 
                 // Load settings
