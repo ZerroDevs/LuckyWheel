@@ -263,12 +263,17 @@ class ShareManager {
             return false;
         }
 
-        if (!Array.isArray(state.entries)) {
+        let entriesList = state.entries;
+        if (state.entries && !Array.isArray(state.entries) && Array.isArray(state.entries.entries)) {
+            entriesList = state.entries.entries;
+        }
+
+        if (!Array.isArray(entriesList)) {
             return false;
         }
 
         // Validate each entry
-        for (const entry of state.entries) {
+        for (const entry of entriesList) {
             if (!entry.text || typeof entry.text !== 'string') {
                 return false;
             }
