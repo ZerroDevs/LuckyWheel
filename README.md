@@ -1,6 +1,6 @@
-# Lucky Wheel & 3D Dice Roller 🎰🎲
+# Lucky Wheel & Gamble Casino 🎰🎲🃏
 
-A modern, feature-rich web application for making random decisions with style. Features a customizable spinning wheel and a 3D dice roller, built with HTML, CSS, and Vanilla JavaScript.
+A modern, feature-rich web application for making random decisions and playing luck-based casino games with style. Features a customizable spinning wheel, 3D dice roller, and multiple gambling modes built with HTML, CSS, and Vanilla JavaScript.
 
 ## Features ✨
 
@@ -14,6 +14,12 @@ A modern, feature-rich web application for making random decisions with style. F
 - **Multi-Dice Support**: Roll up to 4 dice at the same time.
 - **Custom Faces**: Map your entries (text or images) to the faces of the dice.
 - **Weighted Probabilities**: Dice rolls respect the weights you set for your entries.
+
+### 🎰 Casino & Luck Games
+- **Slots**: A fully animated slot machine where your entries serve as the reels! Pull the lever and see if you get a match.
+- **Mystery Box**: Open 3D treasure chests to reveal an entry chosen by luck.
+- **Blackjack**: Play a round of Double or Nothing against a dealer with fully animated cards dealing from the shoe.
+- **Coin Flip**: A simple 3D coin toss (Heads or Tails) that selects from your entries based on their weighted probability.
 
 ### ⚙️ Core Features
 - **Themes**: Toggle between Light and Dark mode.
@@ -53,4 +59,4 @@ This is a static web app. To run it, simply open the `index.html` file in your b
 - GitHub: [@ZerroDevs](https://github.com/ZerroDevs)
 
 ## License 📄
-This project is licensed under a Non-Commercial License. You are free to use, modify, and distribute this software for personal or educational purposes, but **you may not use it for commercial purposes or sell it**. See the [LICENSE](LICENSE) file for full details.
+This project is licensed under a strict **Non-Commercial License**. You are free to use, modify, and distribute this software for personal or educational purposes, but **you are strictly prohibited from selling it, monetizing it, or using it for any commercial purposes**. See the [LICENSE](LICENSE) file for full details.
