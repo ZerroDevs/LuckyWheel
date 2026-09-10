@@ -6,16 +6,34 @@
 class ShareManager {
     constructor() {
         this.baseUrl = window.location.origin + window.location.pathname;
-        this.compressionThreshold = 2000; // Characters before using compression
+        this.compressionThreshold = 0; // Always use compression to keep URLs short
     }
 
     /**
      * Encode wheel state to URL hash
      */
-    encodeState(state) {
+    async encodeState(state) {
         try {
+            // Optimize entries for smaller payload
+            let optimizedEntries = state.entries;
+            if (state.entries && Array.isArray(state.entries.entries)) {
+                optimizedEntries = { ...state.entries };
+                optimizedEntries.entries = state.entries.entries.map(e => {
+                    // Convert to array format: [text, color, weight, image]
+                    const arr = [e.text, e.color, e.weight];
+                    if (e.image) arr.push(e.image);
+                    return arr;
+                });
+            } else if (Array.isArray(state.entries)) {
+                optimizedEntries = state.entries.map(e => {
+                    const arr = [e.text, e.color, e.weight];
+                    if (e.image) arr.push(e.image);
+                    return arr;
+                });
+            }
+
             const data = {
-                entries: state.entries || [],
+                entries: optimizedEntries || [],
                 settings: state.settings || {},
                 timestamp: Date.now()
             };
@@ -25,7 +43,7 @@ class ShareManager {
 
             // Check if we need compression
             if (jsonString.length > this.compressionThreshold) {
-                return this.compressAndEncode(jsonString);
+                return await this.compressAndEncode(jsonString);
             } else {
                 return this.simpleEncode(jsonString);
             }
@@ -49,24 +67,26 @@ class ShareManager {
     }
 
     /**
-     * Compressed encoding for larger payloads
+     * Compressed encoding for larger payloads using CompressionStream
      */
-    compressAndEncode(jsonString) {
+    async compressAndEncode(jsonString) {
         try {
-            // Simple compression: remove unnecessary whitespace and use shorter keys
-            const compressed = jsonString
-                .replace(/\s+/g, ' ')
-                .replace(/"text":/g, '"t":')
-                .replace(/"color":/g, '"c":')
-                .replace(/"weight":/g, '"w":')
-                .replace(/"image":/g, '"i":')
-                .replace(/"settings":/g, '"s":')
-                .replace(/"entries":/g, '"e":');
-
-            const encoded = btoa(encodeURIComponent(compressed));
-            return `#wheel=${encoded}`;
+            if (typeof CompressionStream !== 'undefined') {
+                const stream = new Blob([jsonString]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+                const buffer = await new Response(stream).arrayBuffer();
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                const encoded = btoa(binary);
+                return `#cwheel=${encoded}`; // use #cwheel= to differentiate from old #wheel=
+            } else {
+                // fallback if CompressionStream is not available
+                return this.simpleEncode(jsonString);
+            }
         } catch (error) {
-            console.error('Error in compressed encoding:', error);
+            console.error('Compression error:', error);
             return this.simpleEncode(jsonString);
         }
     }
@@ -74,14 +94,29 @@ class ShareManager {
     /**
      * Decode wheel state from URL hash
      */
-    decodeState(hash) {
+    async decodeState(hash) {
         try {
-            if (!hash || !hash.startsWith('#wheel=')) {
+            if (!hash) return null;
+            
+            let decoded;
+            if (hash.startsWith('#cwheel=')) {
+                // Decompress
+                const encoded = hash.substring(8); // Remove '#cwheel='
+                const binary = atob(encoded);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+                decoded = await new Response(stream).text();
+            } else if (hash.startsWith('#wheel=')) {
+                // Fallback for old uncompressed / simple encoded links
+                const encoded = hash.substring(7); // Remove '#wheel='
+                decoded = decodeURIComponent(atob(encoded));
+            } else {
                 return null;
             }
 
-            const encoded = hash.substring(7); // Remove '#wheel='
-            const decoded = decodeURIComponent(atob(encoded));
             const state = JSON.parse(decoded);
 
             // Restore full keys if compressed
@@ -96,15 +131,31 @@ class ShareManager {
 
             // Restore entry keys
             if (state.entries) {
+                const parseEntry = (entry) => {
+                    // Super-compressed array format
+                    if (Array.isArray(entry)) {
+                        return {
+                            id: Date.now() + Math.random(),
+                            text: entry[0],
+                            color: entry[1],
+                            weight: entry[2],
+                            image: entry[3] || null
+                        };
+                    }
+                    // Object format
+                    if (entry.t) { entry.text = entry.t; delete entry.t; }
+                    if (entry.c) { entry.color = entry.c; delete entry.c; }
+                    if (entry.w) { entry.weight = entry.w; delete entry.w; }
+                    if (entry.i) { entry.image = entry.i; delete entry.i; }
+                    
+                    if (!entry.id) entry.id = Date.now() + Math.random();
+                    if (entry.image === undefined) entry.image = null;
+                    return entry;
+                };
+
                 // If it's an array (old format)
                 if (Array.isArray(state.entries)) {
-                    state.entries = state.entries.map(entry => {
-                        if (entry.t) { entry.text = entry.t; delete entry.t; }
-                        if (entry.c) { entry.color = entry.c; delete entry.c; }
-                        if (entry.w) { entry.weight = entry.w; delete entry.w; }
-                        if (entry.i) { entry.image = entry.i; delete entry.i; }
-                        return entry;
-                    });
+                    state.entries = state.entries.map(parseEntry);
                 } 
                 // If it's an object with an entries array (new format)
                 else {
@@ -115,13 +166,7 @@ class ShareManager {
                     }
                     
                     if (state.entries.entries && Array.isArray(state.entries.entries)) {
-                        state.entries.entries = state.entries.entries.map(entry => {
-                            if (entry.t) { entry.text = entry.t; delete entry.t; }
-                            if (entry.c) { entry.color = entry.c; delete entry.c; }
-                            if (entry.w) { entry.weight = entry.w; delete entry.w; }
-                            if (entry.i) { entry.image = entry.i; delete entry.i; }
-                            return entry;
-                        });
+                        state.entries.entries = state.entries.entries.map(parseEntry);
                     }
                 }
             }
@@ -136,8 +181,8 @@ class ShareManager {
     /**
      * Generate shareable URL
      */
-    generateShareUrl(state) {
-        const hash = this.encodeState(state);
+    async generateShareUrl(state) {
+        const hash = await this.encodeState(state);
         if (!hash) {
             return null;
         }
@@ -147,10 +192,10 @@ class ShareManager {
     /**
      * Load state from current URL
      */
-    loadStateFromUrl() {
+    async loadStateFromUrl() {
         const hash = window.location.hash;
         if (hash) {
-            return this.decodeState(hash);
+            return await this.decodeState(hash);
         }
         return null;
     }
@@ -196,23 +241,31 @@ class ShareManager {
     }
 
     /**
-     * Generate QR Code placeholder (in production, use a QR code library)
+     * Generate QR Code
      */
     generateQRCode(url) {
-        // For a production app, you would use a library like qrcode.js
-        // This is a placeholder that creates a simple visual representation
         const qrContainer = document.getElementById('qrCode');
         if (!qrContainer) return;
 
-        qrContainer.innerHTML = `
-            <div class="qr-placeholder">
-                <p>QR Code</p>
-                <p style="font-size: 0.8rem; margin-top: 0.5rem;">${url.substring(0, 40)}...</p>
-                <p style="font-size: 0.7rem; margin-top: 0.5rem; color: var(--text-muted);">
-                    (QR code library integration needed)
-                </p>
-            </div>
-        `;
+        qrContainer.innerHTML = ''; // Clear previous QR code
+
+        try {
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(qrContainer, {
+                    text: url,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#333333",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.L
+                });
+            } else {
+                qrContainer.innerHTML = '<p style="color: var(--danger-color);">QR Code library failed to load.</p>';
+            }
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            qrContainer.innerHTML = '<p style="color: var(--danger-color);">Failed to generate QR Code.</p>';
+        }
     }
 
     /**
@@ -296,8 +349,8 @@ class ShareManager {
     /**
      * Generate share modal content
      */
-    showShareModal(state) {
-        const shareUrl = this.generateShareUrl(state);
+    async showShareModal(state) {
+        const shareUrl = await this.generateShareUrl(state);
         if (!shareUrl) {
             alert('Unable to generate share URL');
             return;

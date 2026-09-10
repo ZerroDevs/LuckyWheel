@@ -56,13 +56,13 @@ class App {
         this.init();
     }
 
-    init() {
+    async init() {
         this.loadSettings();
         this.setupTabSwitching();
         this.setupKeyboardShortcuts();
         this.setupShareButton();
         this.setupSettingsModal();
-        this.loadSharedState();
+        await this.loadSharedState();
         this.initializeEngines();
         
         // Ensure the correct tab is highlighted and active on load
@@ -354,17 +354,19 @@ class App {
     setupShareButton() {
         const shareBtn = document.getElementById('shareBtn');
         if (shareBtn) {
-            shareBtn.addEventListener('click', () => {
+            shareBtn.addEventListener('click', async () => {
                 const state = {
                     entries: entriesManager ? entriesManager.getState() : null,
                     settings: this.settings
                 };
                 
                 if (shareManager) {
-                    shareManager.showShareModal(state);
+                    await shareManager.showShareModal(state);
                 }
                 
-                soundEffects.playClick();
+                if (typeof soundEffects !== 'undefined' && soundEffects) {
+                    soundEffects.playClick();
+                }
             });
         }
 
@@ -469,9 +471,9 @@ class App {
     /**
      * Load shared state from URL hash
      */
-    loadSharedState() {
+    async loadSharedState() {
         if (shareManager) {
-            const sharedState = shareManager.loadStateFromUrl();
+            const sharedState = await shareManager.loadStateFromUrl();
             if (sharedState && shareManager.validateState(sharedState)) {
                 // Load entries
                 if (sharedState.entries && entriesManager) {
